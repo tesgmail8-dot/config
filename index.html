@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>GAX4U STORE</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script>
+tailwind.config={theme:{extend:{fontFamily:{heading:['Outfit','sans-serif'],body:['DM Sans','sans-serif']},colors:{accent:'#00e68a',price:'#fbbf24',dk:{900:'#0b0b0f',800:'#111118',700:'#16161f',600:'#1c1c28',500:'#242433',400:'#2e2e40'}}}}}
+</script>
+<style>
+:root{--accent:#00e68a;--accent-dim:rgba(0,230,138,.12);--price:#fbbf24;--danger:#ff4757}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:#0b0b0f;color:#e0e0e0;font-family:'DM Sans',sans-serif}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#333;border-radius:3px}
+
+/* === LOADING SCREEN === */
+#loader{position:fixed;inset:0;z-index:9999;background:#0b0b0f;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;transition:opacity .5s,visibility .5s}
+#loader.hide{opacity:0;visibility:hidden}
+#loader .letters{display:flex;gap:3px}
+#loader .letters span{font-family:'Outfit',sans-serif;font-size:2.4rem;font-weight:900;color:var(--accent);opacity:0;transform:translateY(24px) scale(.8);filter:blur(6px);animation:letterIn .5s ease forwards}
+@keyframes letterIn{to{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}}
+#loader .bar{height:2px;width:0;background:linear-gradient(90deg,var(--accent),var(--price));border-radius:2px;animation:barGrow 1.2s ease .8s forwards}
+@keyframes barGrow{to{width:80px}}
+
+/* === NOISE OVERLAY === */
+body::after{content:'';position:fixed;inset:-50%;width:200%;height:200%;background:repeating-conic-gradient(#fff 0.00001%,transparent 0.00025%) 50% 50%/500px 500px;opacity:.012;pointer-events:none;z-index:0}
+
+/* === BG BLOBS === */
+.bg-blob{position:fixed;border-radius:50%;filter:blur(100px);pointer-events:none;z-index:0}
+.blob-1{width:300px;height:300px;background:rgba(0,230,138,.06);top:-80px;right:-60px;animation:bFloat 20s ease-in-out infinite}
+.blob-2{width:250px;height:250px;background:rgba(251,191,36,.04);bottom:-60px;left:-80px;animation:bFloat 25s ease-in-out infinite reverse}
+@keyframes bFloat{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(30px,20px) scale(1.15)}}
+
+/* === APP SHELL === */
+#app{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;max-width:480px;margin:0 auto;overflow:hidden}
+
+/* === HEADER === */
+#header{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:rgba(11,11,15,.85);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.05);flex-shrink:0;position:relative;z-index:20}
+.hamburger,.cart-btn{width:40px;height:40px;display:flex;align-items:center;justify-content:center;border:none;background:transparent;color:#ccc;font-size:1.15rem;cursor:pointer;border-radius:10px;transition:all .2s;position:relative}
+.hamburger:active,.cart-btn:active{transform:scale(.9);background:rgba(255,255,255,.05)}
+.cart-badge{position:absolute;top:4px;right:4px;min-width:16px;height:16px;background:var(--danger);color:#fff;font-size:.6rem;font-weight:700;border-radius:8px;display:flex;align-items:center;justify-content:center;animation:badgePop .3s ease}
+@keyframes badgePop{0%{transform:scale(0)}60%{transform:scale(1.3)}100%{transform:scale(1)}}
+.store-title{font-family:'Outfit',sans-serif;font-weight:800;font-size:1.1rem;background:linear-gradient(135deg,var(--accent),var(--price));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-.5px}
+
+/* === PAGES === */
+#pages{flex:1;overflow:hidden;position:relative}
+.page{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding:16px;opacity:0;transform:translateY(12px);transition:opacity .35s,transform .35s;pointer-events:none;visibility:hidden}
+.page.active{opacity:1;transform:translateY(0);pointer-events:auto;visibility:visible}
+
+/* === SIDEBAR === */
+#sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:50;opacity:0;visibility:hidden;transition:all .3s}
+#sidebar-overlay.open{opacity:1;visibility:visible}
+#sidebar{position:fixed;top:0;left:0;bottom:0;width:280px;max-width:80vw;background:#111118;z-index:51;transform:translateX(-100%);transition:transform .35s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;overflow-y:auto}
+#sidebar.open{transform:translateX(0)}
+.sidebar-head{padding:24px 20px;border-bottom:1px solid rgba(255,255,255,.06)}
+.sidebar-head h2{font-family:'Outfit',sans-serif;font-weight:800;font-size:1.3rem;color:var(--accent)}
+.sidebar-head p{font-size:.72rem;color:#666;margin-top:2px}
+.sidebar-menu{flex:1;padding:12px 0}
+.sb-item{display:flex;align-items:center;gap:12px;padding:12px 20px;color:#aaa;font-size:.88rem;cursor:pointer;transition:all .2s;border:none;background:none;width:100%;text-align:left;font-family:'DM Sans',sans-serif}
+.sb-item i{width:20px;text-align:center;font-size:.9rem}
+.sb-item:active{background:rgba(255,255,255,.04);color:#fff}
+.sb-item.danger{color:var(--danger)}
+.sb-sep{height:1px;background:rgba(255,255,255,.05);margin:8px 20px}
+.sidebar-foot{padding:16px 20px;border-top:1px solid rgba(255,255,255,.06);font-size:.65rem;color:#444;text-align:center}
+
+/* === PRODUCT CARDS === */
+.product-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding-bottom:20px}
+.prod-card{background:#16161f;border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,.04);cursor:pointer;transition:all .3s;opacity:0;transform:translateY(20px) scale(.96);animation:cardIn .5s ease forwards}
+.prod-card:active{transform:scale(.96)!important}
+@keyframes cardIn{to{opacity:1;transform:translateY(0) scale(1)}}
+.prod-card img{width:100%;aspect-ratio:1;object-fit:cover;transition:transform .4s}
+.prod-card:active img{transform:scale(1.08)}
+.prod-card .info{padding:10px 12px}
+.prod-card .info h3{font-family:'Outfit',sans-serif;font-weight:700;font-size:.82rem;color:#e8e8e8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prod-card .info .prc{font-weight:700;font-size:.78rem;color:var(--price);margin-top:3px}
+
+/* === SECTION TITLE === */
+.sec-title{font-family:'Outfit',sans-serif;font-weight:800;font-size:1.15rem;margin-bottom:14px;color:#e8e8e8;display:flex;align-items:center;gap:8px}
+.sec-title i{color:var(--accent);font-size:.9rem}
+
+/* === DETAIL PAGE === */
+.detail-img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:16px;margin-bottom:16px}
+.detail-name{font-family:'Outfit',sans-serif;font-weight:800;font-size:1.4rem;color:#fff}
+.detail-price{font-family:'Outfit',sans-serif;font-weight:800;font-size:1.5rem;color:var(--price);margin:6px 0 12px}
+.detail-desc{color:#888;font-size:.85rem;line-height:1.7;margin-bottom:20px}
+.pay-cards{display:flex;gap:10px;margin-bottom:12px}
+.pay-card{flex:1;padding:16px 10px;border-radius:14px;border:1px solid rgba(255,255,255,.06);background:#16161f;text-align:center;cursor:pointer;transition:all .25s}
+.pay-card:active{transform:scale(.95);border-color:var(--accent);background:var(--accent-dim)}
+.pay-card i{font-size:1.5rem;margin-bottom:6px;display:block}
+.pay-card.dana i{color:#118EEA}.pay-card.qris i{color:var(--price)}
+.pay-card span{font-size:.78rem;font-weight:600;color:#ccc}
+.btn-add-cart{width:100%;padding:13px;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:transparent;color:#aaa;font-family:'DM Sans',sans-serif;font-weight:600;font-size:.88rem;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-add-cart:active{transform:scale(.97);background:rgba(255,255,255,.03)}
+
+/* === MODALS === */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:60;display:flex;align-items:flex-end;justify-content:center;opacity:0;visibility:hidden;transition:all .3s}
+.modal-overlay.open{opacity:1;visibility:visible}
+.modal-box{width:100%;max-width:480px;background:#16161f;border-radius:20px 20px 0 0;padding:24px 20px 32px;transform:translateY(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);max-height:85vh;overflow-y:auto}
+.modal-overlay.open .modal-box{transform:translateY(0)}
+.modal-handle{width:36px;height:4px;background:#333;border-radius:2px;margin:0 auto 18px}
+.modal-title{font-family:'Outfit',sans-serif;font-weight:800;font-size:1.15rem;color:#fff;margin-bottom:16px;text-align:center}
+.modal-close{position:absolute;top:20px;right:16px;width:32px;height:32px;border:none;background:rgba(255,255,255,.06);color:#888;border-radius:8px;cursor:pointer;font-size:.85rem;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.modal-close:active{background:rgba(255,255,255,.12);color:#fff}
+
+/* === DANA/QRIS DISPLAY === */
+.dana-display{text-align:center;padding:20px 0}
+.dana-display .label{font-size:.78rem;color:#666;margin-bottom:8px}
+.dana-display .number{font-family:'Outfit',sans-serif;font-size:1.6rem;font-weight:800;color:#118EEA;letter-spacing:1px}
+.dana-display .copy-btn{margin-top:12px;padding:8px 20px;border:1px solid rgba(17,142,234,.3);background:rgba(17,142,234,.1);color:#118EEA;border-radius:8px;font-size:.78rem;font-weight:600;cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif}
+.dana-display .copy-btn:active{transform:scale(.95)}
+.qris-display{text-align:center;padding:20px 0}
+.qris-display img{width:200px;height:200px;border-radius:12px;border:2px solid rgba(255,255,255,.06)}
+.qris-display .hint{font-size:.72rem;color:#555;margin-top:8px}
+
+/* === CHANNEL CARDS === */
+.ch-card{display:flex;align-items:center;gap:12px;padding:14px 16px;background:#1c1c28;border-radius:12px;margin-bottom:10px;cursor:pointer;border:1px solid rgba(255,255,255,.04);transition:all .2s;text-decoration:none;color:inherit}
+.ch-card:active{transform:scale(.97);border-color:var(--accent)}
+.ch-card i{font-size:1.3rem;width:24px;text-align:center}
+.ch-card.tele i{color:#229ED9}.ch-card.wa i{color:#25D366}
+.ch-card .ch-info h4{font-size:.85rem;font-weight:700;color:#e8e8e8}
+.ch-card .ch-info p{font-size:.7rem;color:#666}
+
+/* === CONTACT CHOICE === */
+.contact-cards{display:flex;gap:10px;margin-top:6px}
+.ct-card{flex:1;padding:20px 10px;border-radius:14px;border:1px solid rgba(255,255,255,.06);background:#1c1c28;text-align:center;cursor:pointer;transition:all .25s}
+.ct-card:active{transform:scale(.95)}
+.ct-card.tele:active{border-color:#229ED9;background:rgba(34,158,217,.1)}
+.ct-card.wa:active{border-color:#25D366;background:rgba(37,211,102,.1)}
+.ct-card i{font-size:2rem;margin-bottom:8px;display:block}
+.ct-card.tele i{color:#229ED9}.ct-card.wa i{color:#25D366}
+.ct-card span{font-size:.82rem;font-weight:700;color:#ccc;display:block}
+
+/* === ACTION BUTTON === */
+.btn-action{width:100%;padding:14px;border:none;border-radius:12px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:.9rem;cursor:pointer;transition:all .25s;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:16px;position:relative;overflow:hidden}
+.btn-action:active{transform:scale(.97)}
+.btn-action.primary{background:linear-gradient(135deg,var(--accent),#00cc7a);color:#0b0b0f}
+.btn-action.primary:active{box-shadow:0 0 30px rgba(0,230,138,.3)}
+.btn-action.outline{background:transparent;border:1px solid rgba(255,255,255,.1);color:#aaa}
+
+/* === CART === */
+.cart-item{display:flex;align-items:center;gap:12px;padding:14px;background:#16161f;border-radius:14px;margin-bottom:10px;border:1px solid rgba(255,255,255,.04);animation:cardIn .4s ease forwards}
+.cart-item img{width:60px;height:60px;border-radius:10px;object-fit:cover}
+.cart-item .ci-info{flex:1;min-width:0}
+.cart-item .ci-info h4{font-size:.82rem;font-weight:700;color:#e8e8e8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cart-item .ci-info .ci-prc{font-size:.78rem;font-weight:700;color:var(--price);margin-top:2px}
+.cart-remove{width:34px;height:34px;border:none;background:rgba(255,71,87,.1);color:var(--danger);border-radius:8px;cursor:pointer;font-size:.8rem;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
+.cart-remove:active{transform:scale(.9);background:rgba(255,71,87,.2)}
+.cart-total{display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-top:1px solid rgba(255,255,255,.06);margin-top:8px}
+.cart-total .lbl{font-size:.9rem;color:#888}.cart-total .val{font-family:'Outfit',sans-serif;font-weight:800;font-size:1.2rem;color:var(--price)}
+.cart-empty{text-align:center;padding:60px 20px;color:#444}
+.cart-empty i{font-size:3rem;margin-bottom:12px;display:block}
+
+/* === ADMIN === */
+.admin-login{max-width:300px;margin:60px auto;text-align:center}
+.admin-login input{width:100%;padding:14px 16px;background:#1c1c28;border:1px solid rgba(255,255,255,.08);border-radius:12px;color:#fff;font-size:.9rem;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s;margin-bottom:14px}
+.admin-login input:focus{border-color:var(--accent)}
+.admin-tabs{display:flex;gap:4px;background:#111118;border-radius:10px;padding:4px;margin-bottom:16px}
+.admin-tab{flex:1;padding:9px 8px;border:none;background:transparent;color:#666;font-size:.75rem;font-weight:600;border-radius:8px;cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif}
+.admin-tab.active{background:var(--accent);color:#0b0b0f}
+.admin-input{width:100%;padding:11px 14px;background:#1c1c28;border:1px solid rgba(255,255,255,.06);border-radius:10px;color:#fff;font-size:.82rem;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s;margin-bottom:10px}
+.admin-input:focus{border-color:var(--accent)}
+.admin-input::placeholder{color:#444}
+textarea.admin-input{min-height:80px;resize:vertical}
+.admin-prod-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#1c1c28;border-radius:10px;margin-bottom:8px}
+.admin-prod-item img{width:40px;height:40px;border-radius:8px;object-fit:cover}
+.admin-prod-item .api{flex:1;min-width:0}
+.admin-prod-item .api h4{font-size:.78rem;font-weight:700;color:#ddd;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.admin-prod-item .api p{font-size:.7rem;color:var(--price)}
+.admin-prod-item .api-btns{display:flex;gap:4px}
+.api-btn{width:30px;height:30px;border:none;border-radius:6px;cursor:pointer;font-size:.7rem;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.api-btn.edit{background:rgba(0,230,138,.1);color:var(--accent)}
+.api-btn.del{background:rgba(255,71,87,.1);color:var(--danger)}
+.api-btn:active{transform:scale(.9)}
+
+/* === DASHBOARD === */
+.dash-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+.dash-card{background:#16161f;border-radius:14px;padding:16px;border:1px solid rgba(255,255,255,.04)}
+.dash-card .dc-val{font-family:'Outfit',sans-serif;font-weight:800;font-size:1.5rem;color:var(--accent)}
+.dash-card .dc-label{font-size:.72rem;color:#555;margin-top:2px}
+.dash-card:nth-child(2) .dc-val{color:var(--price)}
+.dash-card:nth-child(3) .dc-val{color:#38bdf8}
+.dash-card:nth-child(4) .dc-val{color:#c084fc}
+.dash-quick{display:flex;flex-direction:column;gap:8px}
+.dq-btn{display:flex;align-items:center;gap:10px;padding:14px 16px;background:#16161f;border-radius:12px;border:1px solid rgba(255,255,255,.04);cursor:pointer;transition:all .2s;color:#ccc;font-size:.85rem;font-weight:600;font-family:'DM Sans',sans-serif}
+.dq-btn i{width:20px;text-align:center;color:var(--accent)}
+.dq-btn:active{transform:scale(.97);border-color:var(--accent)}
+
+/* === DEVELOPER === */
+.dev-card{text-align:center;padding:30px 20px;background:#16161f;border-radius:18px;border:1px solid rgba(255,255,255,.04);margin-top:16px}
+.dev-card img{width:90px;height:90px;border-radius:50%;object-fit:cover;border:3px solid var(--accent);margin-bottom:14px;box-shadow:0 0 30px rgba(0,230,138,.15);animation:devPulse 3s ease-in-out infinite}
+@keyframes devPulse{0%,100%{box-shadow:0 0 20px rgba(0,230,138,.15)}50%{box-shadow:0 0 40px rgba(0,230,138,.25)}}
+.dev-card h3{font-family:'Outfit',sans-serif;font-weight:800;font-size:1.1rem;color:#fff}
+.dev-card p{font-size:.78rem;color:#666;margin-top:2px}
+.dev-card .dev-link{display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:10px 20px;background:rgba(34,158,217,.1);border:1px solid rgba(34,158,217,.2);color:#229ED9;border-radius:10px;font-size:.82rem;font-weight:600;cursor:pointer;text-decoration:none;transition:all .2s}
+.dev-card .dev-link:active{transform:scale(.95);background:rgba(34,158,217,.2)}
+
+/* === TOAST === */
+#toast-box{position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:100;display:flex;flex-direction:column;gap:8px;width:calc(100% - 32px);max-width:400px;pointer-events:none}
+.toast{padding:12px 16px;border-radius:12px;font-size:.8rem;font-weight:600;display:flex;align-items:center;gap:8px;backdrop-filter:blur(16px);transform:translateY(-20px);opacity:0;transition:all .35s cubic-bezier(.4,0,.2,1);pointer-events:auto}
+.toast.show{transform:translateY(0);opacity:1}
+.toast-success{background:rgba(0,230,138,.15);border:1px solid rgba(0,230,138,.25);color:var(--accent)}
+.toast-error{background:rgba(255,71,87,.15);border:1px solid rgba(255,71,87,.25);color:var(--danger)}
+.toast-info{background:rgba(56,189,248,.15);border:1px solid rgba(56,189,248,.25);color:#38bdf8}
+
+/* === BROADCAST PREVIEW === */
+.bc-preview{background:#1c1c28;border-radius:10px;padding:14px;margin:10px 0;font-size:.8rem;color:#aaa;line-height:1.6;white-space:pre-wrap;word-break:break-word;border:1px solid rgba(255,255,255,.04);max-height:200px;overflow-y:auto}
+.bc-actions{display:flex;gap:8px;margin-top:12px}
+.bc-btn{flex:1;padding:11px;border:none;border-radius:10px;font-size:.78rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s;font-family:'DM Sans',sans-serif}
+.bc-btn:active{transform:scale(.95)}
+.bc-btn.wa{background:rgba(37,211,102,.15);color:#25D366;border:1px solid rgba(37,211,102,.2)}
+.bc-btn.tele{background:rgba(34,158,217,.15);color:#229ED9;border:1px solid rgba(34,158,217,.2)}
+
+/* === RESPONSIVE === */
+@media(min-width:481px){#app{border-left:1px solid rgba(255,255,255,.04);border-right:1px solid rgba(255,255,255,.04)}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+
+<!-- Loading Screen -->
+<div id="loader">
+  <div class="letters" id="loaderLetters"></div>
+  <div class="bar"></div>
+</div>
+
+<!-- Background Blobs -->
+<div class="bg-blob blob-1"></div>
+<div class="bg-blob blob-2"></div>
+
+<!-- Toast Container -->
+<div id="toast-box"></div>
+
+<!-- Sidebar Overlay -->
+<div id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<!-- Sidebar -->
+<nav id="sidebar" role="navigation" aria-label="Menu utama">
+  <div class="sidebar-head">
+    <h2>GAX4U STORE</h2>
+    <p>Official Digital Store</p>
+  </div>
+  <div class="sidebar-menu">
+    <button class="sb-item" onclick="nav('home');closeSidebar()"><i class="fas fa-home"></i>Beranda</button>
+    <button class="sb-item" onclick="nav('cart');closeSidebar()"><i class="fas fa-shopping-cart"></i>Keranjang</button>
+    <button class="sb-item" onclick="nav('dashboard');closeSidebar()"><i class="fas fa-chart-pie"></i>Dashboard</button>
+    <div class="sb-sep"></div>
+    <button class="sb-item" onclick="nav('admin');closeSidebar()"><i class="fas fa-lock"></i>Admin Panel</button>
+    <button class="sb-item" onclick="nav('developer');closeSidebar()"><i class="fas fa-code"></i>Developer</button>
+    <div class="sb-sep"></div>
+    <a class="sb-item" href="https://t.me/GalaxyOffcv1" target="_blank" rel="noopener"><i class="fab fa-telegram"></i>Channel Telegram</a>
+    <a class="sb-item" href="https://whatsapp.com/channel/0029VbBmPnOEQIahGCjHhf1S" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i>Channel WhatsApp</a>
+  </div>
+  <div class="sidebar-foot">GAX4U STORE &copy; 2025</div>
+</nav>
+
+<!-- App -->
+<div id="app">
+  <!-- Header -->
+  <header id="header">
+    <button class="hamburger" onclick="openSidebar()" aria-label="Menu"><i class="fas fa-bars"></i></button>
+    <span class="store-title">GAX4U STORE</span>
+    <button class="cart-btn" onclick="nav('cart')" aria-label="Keranjang">
+      <i class="fas fa-shopping-cart"></i>
+      <span class="cart-badge" id="cartBadge" style="display:none">0</span>
+    </button>
+  </header>
+
+  <!-- Pages -->
+  <div id="pages">
+    <!-- HOME -->
+    <div class="page active" id="pg-home">
+      <div class="sec-title"><i class="fas fa-fire"></i>Produk Tersedia</div>
+      <div class="product-grid" id="productGrid"></div>
+    </div>
+
+    <!-- DETAIL -->
+    <div class="page" id="pg-detail">
+      <button onclick="nav('home')" style="background:none;border:none;color:#888;font-size:.85rem;cursor:pointer;margin-bottom:12px;display:flex;align-items:center;gap:6px;font-family:'DM Sans',sans-serif"><i class="fas fa-arrow-left"></i>Kembali</button>
+      <div id="detailContent"></div>
+    </div>
+
+    <!-- CART -->
+    <div class="page" id="pg-cart">
+      <div class="sec-title"><i class="fas fa-shopping-cart"></i>Keranjang Belanja</div>
+      <div id="cartContent"></div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="page" id="pg-dashboard">
+      <div class="sec-title"><i class="fas fa-chart-pie"></i>Dashboard</div>
+      <div id="dashContent"></div>
+    </div>
+
+    <!-- ADMIN -->
+    <div class="page" id="pg-admin">
+      <div id="adminContent"></div>
+    </div>
+
+    <!-- DEVELOPER -->
+    <div class="page" id="pg-developer">
+      <div class="sec-title"><i class="fas fa-code"></i>Developer</div>
+      <div id="devContent"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Payment Detail -->
+<div class="modal-overlay" id="modal-pay">
+  <div class="modal-box" style="position:relative">
+    <button class="modal-close" onclick="closeModal('modal-pay')"><i class="fas fa-times"></i></button>
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="payTitle">Pembayaran</div>
+    <div id="payBody"></div>
+    <button class="btn-action primary" id="payDoneBtn" onclick="afterPayment()"><i class="fas fa-check"></i>Sudah Bayar</button>
+  </div>
+</div>
+
+<!-- MODAL: Channel Verification -->
+<div class="modal-overlay" id="modal-channel">
+  <div class="modal-box" style="position:relative">
+    <button class="modal-close" onclick="closeModal('modal-channel')"><i class="fas fa-times"></i></button>
+    <div class="modal-handle"></div>
+    <div class="modal-title">Join Channel Dulu Ya</div>
+    <p style="text-align:center;font-size:.8rem;color:#666;margin-bottom:16px">Sebelum mengirim bukti transfer, kamu wajib join channel kami</p>
+    <a class="ch-card tele" href="https://t.me/GalaxyOffcv1" target="_blank" rel="noopener">
+      <i class="fab fa-telegram"></i>
+      <div class="ch-info"><h4>Channel Telegram</h4><p>t.me/GalaxyOffcv1</p></div>
+      <i class="fas fa-external-link-alt" style="color:#444;font-size:.7rem;margin-left:auto"></i>
+    </a>
+    <a class="ch-card wa" href="https://whatsapp.com/channel/0029VbBmPnOEQIahGCjHhf1S" target="_blank" rel="noopener">
+      <i class="fab fa-whatsapp"></i>
+      <div class="ch-info"><h4>Channel WhatsApp</h4><p>WhatsApp Channel</p></div>
+      <i class="fas fa-external-link-alt" style="color:#444;font-size:.7rem;margin-left:auto"></i>
+    </a>
+    <button class="btn-action primary" onclick="goToContact()"><i class="fas fa-arrow-right"></i>Sudah Join, Lanjutkan</button>
+  </div>
+</div>
+
+<!-- MODAL: Contact Choice -->
+<div class="modal-overlay" id="modal-contact">
+  <div class="modal-box" style="position:relative">
+    <button class="modal-close" onclick="closeModal('modal-contact')"><i class="fas fa-times"></i></button>
+    <div class="modal-handle"></div>
+    <div class="modal-title">Kirim Bukti Transfer Via</div>
+    <div class="contact-cards">
+      <div class="ct-card tele" onclick="sendViaTelegram()">
+        <i class="fab fa-telegram"></i>
+        <span>Telegram</span>
+      </div>
+      <div class="ct-card wa" onclick="sendViaWhatsApp()">
+        <i class="fab fa-whatsapp"></i>
+        <span>WhatsApp</span>
+      </div>
+    </div>
+    <p style="text-align:center;font-size:.7rem;color:#444;margin-top:14px">Pesan otomatis akan tersedia untuk kamu kirim</p>
+  </div>
+</div>
+
+<!-- MODAL: Admin Product Form -->
+<div class="modal-overlay" id="modal-prod-form">
+  <div class="modal-box" style="position:relative">
+    <button class="modal-close" onclick="closeModal('modal-prod-form')"><i class="fas fa-times"></i></button>
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="prodFormTitle">Tambah Produk</div>
+    <input class="admin-input" id="pf-name" placeholder="Nama Produk">
+    <input class="admin-input" id="pf-price" placeholder="Harga (angka saja)" type="number" min="0">
+    <input class="admin-input" id="pf-image" placeholder="URL Gambar (catbox)">
+    <textarea class="admin-input" id="pf-desc" placeholder="Deskripsi produk"></textarea>
+    <input type="hidden" id="pf-id" value="">
+    <button class="btn-action primary" onclick="saveProduct()"><i class="fas fa-save"></i>Simpan Produk</button>
+  </div>
+</div>
+
+<script>
+/* ============================
+   KONFIGURASI & DATA DEFAULT
+============================ */
+const DEFAULT_CONFIG = {
+  storeName: 'GAX4U STORE',
+  adminPassword: 'gax4u',
+  danaNumber: '0889-8385-2784',
+  qrisImage: 'https://gangalink.vercel.app/i/8dpiit2l.jpg',
+  teleContact: 'gaxx4u',
+  waContact: '6288983852784'
+};
+
+const DEFAULT_PRODUCTS = [
+  {
+    id: 1,
+    name: 'Script Bot Telegram',
+    price: 25000,
+    image: 'https://files.catbox.moe/gaxscript.png',
+    description: 'Script bot Telegram auto-reply, siap pakai. Dilengkapi fitur anti-spam, welcome message, dan panel kontrol admin.'
+  },
+  {
+    id: 2,
+    name: 'Panel Hosting Premium',
+    price: 50000,
+    image: 'https://files.catbox.moe/gaxpanel.png',
+    description: 'Akses panel hosting premium dengan fitur lengkap: SSL gratis, unlimited bandwidth, dan support 24 jam.'
+  },
+  {
+    id: 3,
+    name: 'Jasa Tambah Followers',
+    price: 15000,
+    image: 'https://files.catbox.moe/gaxfollowers.png',
+    description: 'Jasa tambah followers aktif untuk akun media sosial kamu. Proses cepat, aman, dan tanpa password.'
+  },
+  {
+    id: 4,
+    name: 'Akun Streaming Premium',
+    price: 35000,
+    image: 'https://files.catbox.moe/gaxstreaming.png',
+    description: 'Akun streaming premium bergaransi. Durasi aktif 30 hari dengan kualitas resolusi tertinggi.'
+  }
+];
+
+/* ============================
+   STATE
+============================ */
+let config = {};
+let products = [];
+let cart = [];
+let selectedProduct = null;
+let adminAuth = false;
+let adminTab = 'produk';
+let payType = 'dana'; // 'dana' atau 'qris'
+
+/* ============================
+   STORAGE HELPERS
+============================ */
+function loadStorage(key, fallback) {
+  try {
+    const d = localStorage.getItem('gax4u_' + key);
+    return d ? JSON.parse(d) : fallback;
+  } catch { return fallback; }
+}
+function saveStorage(key, data) {
+  try { localStorage.setItem('gax4u_' + key, JSON.stringify(data)); } catch {}
+}
+
+/* ============================
+   INISIALISASI
+============================ */
+function init() {
+  config = loadStorage('config', DEFAULT_CONFIG);
+  products = loadStorage('products', DEFAULT_PRODUCTS);
+  cart = loadStorage('cart', []);
+
+  // Loading screen animasi huruf
+  const letters = 'GAX4U';
+  const container = document.getElementById('loaderLetters');
+  letters.split('').forEach((ch, i) => {
+    const span = document.createElement('span');
+    span.textContent = ch;
+    span.style.animationDelay = (i * 0.1) + 's';
+    container.appendChild(span);
+  });
+
+  // Sembunyikan loader setelah 2 detik
+  setTimeout(() => {
+    document.getElementById('loader').classList.add('hide');
+    renderHome();
+    updateCartBadge();
+  }, 2000);
+}
+
+/* ============================
+   NAVIGASI
+============================ */
+function nav(page, data) {
+  // Simpan kode produk sebelumnya
+  if (currentPage() === 'home' || currentPage() === 'detail') {
+    // nothing special
+  }
+
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+
+  if (page === 'home') renderHome();
+  else if (page === 'detail' && data) renderDetail(data);
+  else if (page === 'cart') renderCart();
+  else if (page === 'dashboard') renderDashboard();
+  else if (page === 'admin') renderAdmin();
+  else if (page === 'developer') renderDeveloper();
+
+  document.getElementById('pg-' + page).classList.add('active');
+}
+
+function currentPage() {
+  const active = document.querySelector('.page.active');
+  return active ? active.id.replace('pg-', '') : 'home';
+}
+
+/* ============================
+   SIDEBAR
+============================ */
+function openSidebar() {
+  document.getElementById('sidebar-overlay').classList.add('open');
+  document.getElementById('sidebar').classList.add('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar-overlay').classList.remove('open');
+  document.getElementById('sidebar').classList.remove('open');
+}
+
+/* ============================
+   RENDER: HOME
+============================ */
+function renderHome() {
+  const grid = document.getElementById('productGrid');
+  grid.innerHTML = '';
+  products.forEach((p, i) => {
+    const card = document.createElement('div');
+    card.className = 'prod-card';
+    card.style.animationDelay = (i * 0.1) + 's';
+    card.onclick = () => nav('detail', p.id);
+    card.innerHTML = `
+      <img src="${esc(p.image)}" alt="${esc(p.name)}" onerror="this.src='https://picsum.photos/seed/gax${p.id}/400/400'">
+      <div class="info">
+        <h3>${esc(p.name)}</h3>
+        <div class="prc">${formatRp(p.price)}</div>
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+
+/* ============================
+   RENDER: DETAIL
+============================ */
+function renderDetail(productId) {
+  const p = products.find(x => x.id === productId);
+  if (!p) return nav('home');
+  selectedProduct = p;
+
+  const el = document.getElementById('detailContent');
+  el.innerHTML = `
+    <img class="detail-img" src="${esc(p.image)}" alt="${esc(p.name)}" onerror="this.src='https://picsum.photos/seed/gax${p.id}/400/400'">
+    <div class="detail-name">${esc(p.name)}</div>
+    <div class="detail-price">${formatRp(p.price)}</div>
+    <div class="detail-desc">${esc(p.description)}</div>
+    <div class="pay-cards">
+      <div class="pay-card dana" onclick="openPayment('dana')">
+        <i class="fas fa-wallet"></i>
+        <span>Via DANA</span>
+      </div>
+      <div class="pay-card qris" onclick="openPayment('qris')">
+        <i class="fas fa-qrcode"></i>
+        <span>Via QRIS</span>
+      </div>
+    </div>
+    <button class="btn-add-cart" onclick="addToCart(${p.id})">
+      <i class="fas fa-cart-plus"></i>Tambah ke Keranjang
+    </button>`;
+}
+
+/* ============================
+   PAYMENT FLOW
+============================ */
+function openPayment(type) {
+  payType = type;
+  const title = document.getElementById('payTitle');
+  const body = document.getElementById('payBody');
+  const doneBtn = document.getElementById('payDoneBtn');
+
+  if (type === 'dana') {
+    title.textContent = 'Pembayaran Via DANA';
+    body.innerHTML = `
+      <div class="dana-display">
+        <div style="font-size:2.5rem;color:#118EEA;margin-bottom:10px"><i class="fas fa-wallet"></i></div>
+        <div class="label">Transfer ke nomor DANA</div>
+        <div class="number">${esc(config.danaNumber)}</div>
+        <button class="copy-btn" onclick="copyText('${esc(config.danaNumber)}')"><i class="fas fa-copy"></i> Salin Nomor</button>
+      </div>`;
+    doneBtn.innerHTML = '<i class="fas fa-check"></i>Sudah Transfer';
+  } else {
+    title.textContent = 'Pembayaran Via QRIS';
+    body.innerHTML = `
+      <div class="qris-display">
+        <div style="font-size:2.5rem;color:var(--price);margin-bottom:10px"><i class="fas fa-qrcode"></i></div>
+        <img src="${esc(config.qrisImage)}" alt="QRIS" onerror="this.src='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=GAX4U-PAYMENT'">
+        <div class="hint">Scan QR code di atas untuk membayar</div>
+      </div>`;
+    doneBtn.innerHTML = '<i class="fas fa-check"></i>Sudah Scan & Bayar';
+  }
+
+  openModal('modal-pay');
+}
+
+function afterPayment() {
+  closeModal('modal-pay');
+  setTimeout(() => openModal('modal-channel'), 350);
+}
+
+function goToContact() {
+  closeModal('modal-channel');
+  setTimeout(() => openModal('modal-contact'), 350);
+}
+
+function buildMessage() {
+  if (!selectedProduct) return '';
+  return `MIN, SAYA SUDAH BAYAR ${selectedProduct.name.toUpperCase()} DENGAN HARGA ${formatRp(selectedProduct.price)}, SELANJUTNYA TF BUKTI KAN MIN`;
+}
+
+function sendViaWhatsApp() {
+  const msg = buildMessage();
+  const url = `https://wa.me/${config.waContact}?text=${encodeURIComponent(msg)}`;
+  closeModal('modal-contact');
+  showToast('Membuka WhatsApp...', 'success');
+  setTimeout(() => window.open(url, '_blank'), 400);
+}
+
+function sendViaTelegram() {
+  const msg = buildMessage();
+  const url = `https://t.me/${config.teleContact}`;
+  closeModal('modal-contact');
+  // Telegram tidak support pre-filled text ke user biasa, jadi copy pesan + buka link
+  copyText(msg);
+  showToast('Pesan disalin! Kirim ke Telegram', 'success');
+  setTimeout(() => window.open(url, '_blank'), 500);
+}
+
+/* ============================
+   KERANJANG
+============================ */
+function addToCart(productId) {
+  const existing = cart.find(c => c.id === productId);
+  if (existing) {
+    existing.qty += 1;
+  } else {
+    cart.push({ id: productId, qty: 1 });
+  }
+  saveCart();
+  updateCartBadge();
+  showToast('Ditambahkan ke keranjang', 'success');
+}
+
+function removeFromCart(productId) {
+  cart = cart.filter(c => c.id !== productId);
+  saveCart();
+  updateCartBadge();
+  renderCart();
+}
+
+function saveCart() { saveStorage('cart', cart); }
+
+function updateCartBadge() {
+  const badge = document.getElementById('cartBadge');
+  const total = cart.reduce((s, c) => s + c.qty, 0);
+  if (total > 0) {
+    badge.style.display = 'flex';
+    badge.textContent = total;
+    // Re-trigger animasi
+    badge.style.animation = 'none';
+    badge.offsetHeight; // reflow
+    badge.style.animation = 'badgePop .3s ease';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function renderCart() {
+  const el = document.getElementById('cartContent');
+  if (cart.length === 0) {
+    el.innerHTML = `<div class="cart-empty"><i class="fas fa-shopping-cart"></i><p>Keranjang masih kosong</p></div>`;
+    return;
+  }
+
+  let html = '';
+  let totalPrice = 0;
+
+  cart.forEach(item => {
+    const p = products.find(x => x.id === item.id);
+    if (!p) return;
+    const subtotal = p.price * item.qty;
+    totalPrice += subtotal;
+    html += `
+      <div class="cart-item">
+        <img src="${esc(p.image)}" alt="${esc(p.name)}" onerror="this.src='https://picsum.photos/seed/gax${p.id}/100/100'">
+        <div class="ci-info">
+          <h4>${esc(p.name)}</h4>
+          <div class="ci-prc">${formatRp(subtotal)} <span style="color:#555;font-size:.7rem">(x${item.qty})</span></div>
+        </div>
+        <button class="cart-remove" onclick="removeFromCart(${p.id})" aria-label="Hapus"><i class="fas fa-trash"></i></button>
+      </div>`;
+  });
+
+  html += `
+    <div class="cart-total">
+      <span class="lbl">Total</span>
+      <span class="val">${formatRp(totalPrice)}</span>
+    </div>
+    <button class="btn-action primary" onclick="checkoutCart()"><i class="fas fa-arrow-right"></i>Checkout Sekarang</button>`;
+
+  el.innerHTML = html;
+}
+
+function checkoutCart() {
+  if (cart.length === 0) return;
+  // Ambil produk pertama sebagai referensi, atau gabungkan pesan
+  const itemNames = cart.map(c => {
+    const p = products.find(x => x.id === c.id);
+    return p ? `${p.name} (${formatRp(p.price * c.qty)})` : '';
+  }).filter(Boolean).join('\n- ');
+
+  const total = cart.reduce((s, c) => {
+    const p = products.find(x => x.id === c.id);
+    return s + (p ? p.price * c.qty : 0);
+  }, 0);
+
+  selectedProduct = { name: itemNames, price: total };
+  openPayment('dana');
+}
+
+/* ============================
+   DASHBOARD
+============================ */
+function renderDashboard() {
+  const el = document.getElementById('dashContent');
+  el.innerHTML = `
+    <div class="dash-cards">
+      <div class="dash-card"><div class="dc-val">${products.length}</div><div class="dc-label">Total Produk</div></div>
+      <div class="dash-card"><div class="dc-val">${formatRp(products.reduce((s,p)=>s+p.price,0))}</div><div class="dc-label">Nilai Stok</div></div>
+      <div class="dash-card"><div class="dc-val">${cart.length}</div><div class="dc-label">Di Keranjang</div></div>
+      <div class="dash-card"><div class="dc-val">${products.filter(p=>p.price<20000).length}</div><div class="dc-label">Murah (<20rb)</div></div>
+    </div>
+    <div class="sec-title" style="margin-top:8px"><i class="fas fa-bolt"></i>Aksi Cepat</div>
+    <div class="dash-quick">
+      <button class="dq-btn" onclick="nav('admin')"><i class="fas fa-plus-circle"></i>Tambah Produk Baru</button>
+      <button class="dq-btn" onclick="nav('admin')"><i class="fas fa-bullhorn"></i>Broadcast Pesan</button>
+      <a class="dq-btn" href="https://t.me/GalaxyOffcv1" target="_blank" rel="noopener"><i class="fab fa-telegram"></i>Buka Channel Telegram</a>
+      <a class="dq-btn" href="https://whatsapp.com/channel/0029VbBmPnOEQIahGCjHhf1S" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i>Buka Channel WhatsApp</a>
+    </div>`;
+}
+
+/* ============================
+   ADMIN
+============================ */
+function renderAdmin() {
+  const el = document.getElementById('adminContent');
+
+  if (!adminAuth) {
+    el.innerHTML = `
+      <div class="admin-login">
+        <div style="font-size:2.5rem;color:var(--accent);margin-bottom:16px"><i class="fas fa-shield-halved"></i></div>
+        <h2 style="font-family:'Outfit',sans-serif;font-weight:800;font-size:1.2rem;color:#fff;margin-bottom:6px">Admin Panel</h2>
+        <p style="font-size:.78rem;color:#555;margin-bottom:24px">Masukkan password untuk melanjutkan</p>
+        <input type="password" id="adminPwInput" placeholder="Password" onkeydown="if(event.key==='Enter')adminLogin()">
+        <button class="btn-action primary" onclick="adminLogin()"><i class="fas fa-unlock"></i>Masuk</button>
+      </div>`;
+    return;
+  }
+
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div class="sec-title" style="margin-bottom:0"><i class="fas fa-cog"></i>Admin Panel</div>
+      <button style="background:none;border:none;color:var(--danger);font-size:.78rem;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600" onclick="adminLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+    </div>
+    <div class="admin-tabs">
+      <button class="admin-tab ${adminTab==='produk'?'active':''}" onclick="adminTab='produk';renderAdmin()">Produk</button>
+      <button class="admin-tab ${adminTab==='broadcast'?'active':''}" onclick="adminTab='broadcast';renderAdmin()">Broadcast</button>
+      <button class="admin-tab ${adminTab==='pengaturan'?'active':''}" onclick="adminTab='pengaturan';renderAdmin()">Setting</button>
+    </div>
+    <div id="adminTabContent"></div>`;
+
+  const tabEl = document.getElementById('adminTabContent');
+
+  if (adminTab === 'produk') {
+    let html = `<button class="btn-action primary" style="margin-bottom:14px" onclick="openProductForm()"><i class="fas fa-plus"></i>Tambah Produk</button>`;
+    products.forEach(p => {
+      html += `
+        <div class="admin-prod-item">
+          <img src="${esc(p.image)}" alt="" onerror="this.src='https://picsum.photos/seed/gax${p.id}/80/80'">
+          <div class="api"><h4>${esc(p.name)}</h4><p>${formatRp(p.price)}</p></div>
+          <div class="api-btns">
+            <button class="api-btn edit" onclick="openProductForm(${p.id})" aria-label="Edit"><i class="fas fa-pen"></i></button>
+            <button class="api-btn del" onclick="deleteProduct(${p.id})" aria-label="Hapus"><i class="fas fa-trash"></i></button>
+          </div>
+        </div>`;
+    });
+    if (products.length === 0) html += `<p style="text-align:center;color:#444;font-size:.82rem;padding:30px 0">Belum ada produk</p>`;
+    tabEl.innerHTML = html;
+
+  } else if (adminTab === 'broadcast') {
+    tabEl.innerHTML = `
+      <textarea class="admin-input" id="bcMsg" placeholder="Tulis pesan broadcast..." oninput="updateBcPreview()" style="min-height:100px">PROMO SPESIAL! Dapatkan diskon 20% untuk semua produk di GAX4U STORE. Buruan sebelum kehabisan!</textarea>
+      <div style="font-size:.75rem;color:#555;margin-bottom:4px">Preview:</div>
+      <div class="bc-preview" id="bcPreview"></div>
+      <div class="bc-actions">
+        <button class="bc-btn wa" onclick="sendBroadcast('wa')"><i class="fab fa-whatsapp"></i>WhatsApp</button>
+        <button class="bc-btn tele" onclick="sendBroadcast('tele')"><i class="fab fa-telegram"></i>Telegram</button>
+      </div>`;
+    updateBcPreview();
+
+  } else if (adminTab === 'pengaturan') {
+    tabEl.innerHTML = `
+      <label style="font-size:.75rem;color:#666;display:block;margin-bottom:4px">Nama Toko</label>
+      <input class="admin-input" id="setStore" value="${esc(config.storeName)}">
+      <label style="font-size:.75rem;color:#666;display:block;margin-bottom:4px">Nomor DANA</label>
+      <input class="admin-input" id="setDana" value="${esc(config.danaNumber)}">
+      <label style="font-size:.75rem;color:#666;display:block;margin-bottom:4px">URL Gambar QRIS</label>
+      <input class="admin-input" id="setQris" value="${esc(config.qrisImage)}">
+      <label style="font-size:.75rem;color:#666;display:block;margin-bottom:4px">Username Telegram (tanpa @)</label>
+      <input class="admin-input" id="setTele" value="${esc(config.teleContact)}">
+      <label style="font-size:.75rem;color:#666;display:block;margin-bottom:4px">Nomor WhatsApp (tanpa +)</label>
+      <input class="admin-input" id="setWa" value="${esc(config.waContact)}">
+      <label style="font-size:.75rem;color:#666;display:block;margin-bottom:4px">Password Baru</label>
+      <input class="admin-input" id="setPw" type="password" placeholder="Kosongkan jika tidak diganti">
+      <button class="btn-action primary" onclick="saveSettings()"><i class="fas fa-save"></i>Simpan Pengaturan</button>`;
+  }
+}
+
+function adminLogin() {
+  const input = document.getElementById('adminPwInput');
+  if (input.value === config.adminPassword) {
+    adminAuth = true;
+    adminTab = 'produk';
+    renderAdmin();
+    showToast('Berhasil masuk sebagai admin', 'success');
+  } else {
+    showToast('Password salah', 'error');
+    input.value = '';
+    input.focus();
+  }
+}
+
+function adminLogout() {
+  adminAuth = false;
+  renderAdmin();
+  showToast('Berhasil logout', 'info');
+}
+
+function openProductForm(id) {
+  const isEdit = id !== undefined;
+  document.getElementById('prodFormTitle').textContent = isEdit ? 'Edit Produk' : 'Tambah Produk';
+
+  if (isEdit) {
+    const p = products.find(x => x.id === id);
+    if (!p) return;
+    document.getElementById('pf-name').value = p.name;
+    document.getElementById('pf-price').value = p.price;
+    document.getElementById('pf-image').value = p.image;
+    document.getElementById('pf-desc').value = p.description;
+    document.getElementById('pf-id').value = p.id;
+  } else {
+    document.getElementById('pf-name').value = '';
+    document.getElementById('pf-price').value = '';
+    document.getElementById('pf-image').value = '';
+    document.getElementById('pf-desc').value = '';
+    document.getElementById('pf-id').value = '';
+  }
+
+  openModal('modal-prod-form');
+}
+
+function saveProduct() {
+  const name = document.getElementById('pf-name').value.trim();
+  const price = parseInt(document.getElementById('pf-price').value) || 0;
+  const image = document.getElementById('pf-image').value.trim();
+  const desc = document.getElementById('pf-desc').value.trim();
+  const editId = document.getElementById('pf-id').value;
+
+  if (!name || price <= 0) {
+    showToast('Nama dan harga wajib diisi', 'error');
+    return;
+  }
+
+  if (editId) {
+    // Edit
+    const p = products.find(x => x.id === parseInt(editId));
+    if (p) {
+      p.name = name;
+      p.price = price;
+      p.image = image || `https://picsum.photos/seed/gax${p.id}/400/400`;
+      p.description = desc;
+    }
+    showToast('Produk berhasil diperbarui', 'success');
+  } else {
+    // Tambah baru
+    const newId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
+    products.push({
+      id: newId,
+      name: name,
+      price: price,
+      image: image || `https://picsum.photos/seed/gax${newId}/400/400`,
+      description: desc || 'Tidak ada deskripsi'
+    });
+    showToast('Produk berhasil ditambahkan', 'success');
+  }
+
+  saveStorage('products', products);
+  closeModal('modal-prod-form');
+  renderAdmin();
+  renderHome();
+}
+
+function deleteProduct(id) {
+  products = products.filter(p => p.id !== id);
+  saveStorage('products', products);
+  renderAdmin();
+  renderHome();
+  showToast('Produk dihapus', 'info');
+}
+
+function updateBcPreview() {
+  const msg = document.getElementById('bcMsg');
+  const preview = document.getElementById('bcPreview');
+  if (msg && preview) {
+    preview.textContent = msg.value || '(kosong)';
+  }
+}
+
+function sendBroadcast(type) {
+  const msg = document.getElementById('bcMsg').value.trim();
+  if (!msg) { showToast('Tulis pesan dulu', 'error'); return; }
+
+  const fullMsg = `[GAX4U STORE]\n\n${msg}`;
+
+  if (type === 'wa') {
+    window.open(`https://wa.me/?text=${encodeURIComponent(fullMsg)}`, '_blank');
+  } else {
+    copyText(fullMsg);
+    showToast('Pesan disalin! Paste ke Telegram', 'success');
+  }
+}
+
+function saveSettings() {
+  const storeName = document.getElementById('setStore').value.trim();
+  const danaNumber = document.getElementById('setDana').value.trim();
+  const qrisImage = document.getElementById('setQris').value.trim();
+  const teleContact = document.getElementById('setTele').value.trim();
+  const waContact = document.getElementById('setWa').value.trim();
+  const newPw = document.getElementById('setPw').value;
+
+  config.storeName = storeName || config.storeName;
+  config.danaNumber = danaNumber || config.danaNumber;
+  config.qrisImage = qrisImage || config.qrisImage;
+  config.teleContact = teleContact || config.teleContact;
+  config.waContact = waContact || config.waContact;
+  if (newPw) config.adminPassword = newPw;
+
+  saveStorage('config', config);
+  showToast('Pengaturan tersimpan', 'success');
+  renderAdmin();
+}
+
+/* ============================
+   DEVELOPER
+============================ */
+function renderDeveloper() {
+  const el = document.getElementById('devContent');
+  el.innerHTML = `
+    <div class="dev-card">
+      <img src="https://gangalink.vercel.app/i/ypzuw9ym.jpg" alt="Developer" onerror="this.src='https://picsum.photos/seed/gaxdev/200/200'">
+      <h3>GAX4U</h3>
+      <p>Full Stack Developer</p>
+      <a class="dev-link" href="https://t.me/gaxx4u" target="_blank" rel="noopener">
+        <i class="fab fa-telegram"></i>@gaxx4u
+      </a>
+      <div style="margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,.05)">
+        <p style="font-size:.75rem;color:#555;line-height:1.7">
+          Membangun solusi digital yang modern, cepat, dan user-friendly.
+          Fokus pada pengembangan web dan aplikasi mobile.
+        </p>
+      </div>
+    </div>
+    <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px">
+      <div style="background:#16161f;border-radius:12px;padding:14px 16px;border:1px solid rgba(255,255,255,.04)">
+        <div style="font-size:.72rem;color:#555;margin-bottom:4px">Tech Stack</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          <span style="padding:4px 10px;background:rgba(0,230,138,.1);color:var(--accent);border-radius:6px;font-size:.7rem;font-weight:600">HTML</span>
+          <span style="padding:4px 10px;background:rgba(0,230,138,.1);color:var(--accent);border-radius:6px;font-size:.7rem;font-weight:600">CSS</span>
+          <span style="padding:4px 10px;background:rgba(0,230,138,.1);color:var(--accent);border-radius:6px;font-size:.7rem;font-weight:600">JavaScript</span>
+          <span style="padding:4px 10px;background:rgba(0,230,138,.1);color:var(--accent);border-radius:6px;font-size:.7rem;font-weight:600">Python</span>
+          <span style="padding:4px 10px;background:rgba(0,230,138,.1);color:var(--accent);border-radius:6px;font-size:.7rem;font-weight:600">PHP</span>
+        </div>
+      </div>
+    </div>`;
+}
+
+/* ============================
+   MODALS
+============================ */
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  // Cek apakah masih ada modal terbuka
+  const anyOpen = document.querySelector('.modal-overlay.open');
+  if (!anyOpen) document.body.style.overflow = '';
+}
+function closeAllModals() {
+  document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('open'));
+  document.body.style.overflow = '';
+}
+
+// Tutup modal saat klik overlay
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', (e) => {
+    if (e.target === m) closeModal(m.id);
+  });
+});
+
+/* ============================
+   TOAST
+============================ */
+function showToast(message, type = 'info') {
+  const box = document.getElementById('toast-box');
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  const icons = { success: 'check-circle', error: 'exclamation-circle', info: 'info-circle' };
+  toast.innerHTML = `<i class="fas fa-${icons[type] || 'info-circle'}"></i><span>${esc(message)}</span>`;
+  box.appendChild(toast);
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => toast.classList.add('show'));
+  });
+
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 350);
+  }, 3000);
+}
+
+/* ============================
+   UTILITAS
+============================ */
+function formatRp(num) {
+  return 'Rp ' + (num || 0).toLocaleString('id-ID');
+}
+
+function esc(str) {
+  if (!str) return '';
+  const div = document.createElement('div');
+  div.textContent = String(str);
+  return div.innerHTML;
+}
+
+function copyText(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      showToast('Disalin ke clipboard', 'success');
+    }).catch(() => fallbackCopy(text));
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;left:-9999px';
+  document.body.appendChild(ta);
+  ta.select();
+  try {
+    document.execCommand('copy');
+    showToast('Disalin ke clipboard', 'success');
+  } catch { showToast('Gagal menyalin', 'error'); }
+  document.body.removeChild(ta);
+}
+
+/* ============================
+   KEYBOARD SHORTCUT
+============================ */
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeAllModals();
+});
+
+/* ============================
+   START
+============================ */
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+  </html>
